@@ -1,0 +1,55 @@
+# Vagrantfile for Multi-VM Setup
+Vagrant.configure("2") do |config|
+    # Define VM web01
+    config.vm.define "web01" do |web01|
+      web01.vm.box = "ubuntu/focal64"  # Ubuntu 20.04 LTS
+      web01.vm.hostname = "web01"
+      web01.vm.network "private_network", ip: "192.168.56.41"
+      
+      # Customize VM resources (optional)
+      web01.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+      end
+    end
+  
+    # Define VM web02
+    config.vm.define "web02" do |web02|
+      web02.vm.box = "ubuntu/focal64"  # Ubuntu 20.04 LTS
+      web02.vm.hostname = "web02"
+      web02.vm.network "private_network", ip: "192.168.56.42"
+      
+      # Customize VM resources (optional)
+      web02.vm.provider "virtualbox" do |vb|
+        vb.memory = "512"
+        vb.cpus = 1
+      end
+    end
+  
+    # Define VM db01
+    config.vm.define "db01" do |db01|
+      db01.vm.box = "centos/7"  # CentOS 7
+      db01.vm.hostname = "db01"
+      db01.vm.network "private_network", ip: "192.168.56.43"
+      
+      # Customize VM resources (optional)
+      db01.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = 2
+      end
+  
+      # Provisioning: Install and configure MariaDB
+      db01.vm.provision "shell", inline: <<-SHELL
+        yum update -y
+        yum install -y mariadb-server
+        systemctl start mariadb
+        systemctl enable mariadb
+        mysql -e "CREATE USER 'vagrant'@'%' IDENTIFIED BY 'vagrant';"
+        mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'vagrant'@'%';"
+        mysql -e "FLUSH PRIVILEGES;"
+        firewall-cmd --permanent --add-service=mysql
+        firewall-cmd --reload
+      SHELL
+    end
+  end
+  
